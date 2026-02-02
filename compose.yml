@@ -3,13 +3,11 @@ services:
     image: postgres:15-alpine
     container_name: qr_scanner_db
     environment:
-      POSTGRES_DB: qr_scanner
+      POSTGRES_DB: ${POSTGRES_DB:-qr_scanner}
       POSTGRES_USER: ${POSTGRES_USER:-user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
       - qr-network
     restart: unless-stopped
@@ -20,13 +18,10 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/qr_scanner
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-qr_scanner}
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
     volumes:
-      - ./backend/app:/app/app
       - uploads_volume:/app/static/uploads
-    ports:
-      - "8000:8000"
     networks:
       - qr-network
     restart: unless-stopped
@@ -36,8 +31,6 @@ services:
     container_name: qr_scanner_frontend
     depends_on:
       - backend
-    ports:
-      - "3000:3000"
     networks:
       - qr-network
     restart: unless-stopped
@@ -54,7 +47,6 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/ssl:/etc/nginx/ssl
-      - ./frontend/dist:/usr/share/nginx/html
     networks:
       - qr-network
     restart: unless-stopped
