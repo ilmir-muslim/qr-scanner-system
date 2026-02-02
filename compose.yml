@@ -11,12 +11,18 @@ services:
     networks:
       - qr-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   backend:
     build: ./backend
     container_name: qr_scanner_backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-qr_scanner}
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
@@ -25,6 +31,11 @@ services:
     networks:
       - qr-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build: ./frontend
